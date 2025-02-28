@@ -1,20 +1,20 @@
-# Используем легковесный образ Python (Alpine)
+# Используем облегчённый образ Python на Alpine
 FROM python:3.11-alpine
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Устанавливаем системные зависимости (sqlite3, gcc)
-RUN apk add --no-cache libsqlite3-dev gcc musl-dev
+# Устанавливаем необходимые системные зависимости
+RUN apk add --no-cache gcc musl-dev python3-dev sqlite
 
 # Копируем файлы проекта
 COPY . .
 
 # Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt && rm -rf /root/.cache
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Открываем порт (но Railway сам задает $PORT)
 EXPOSE 8000
 
-# Запускаем сервер с правильным портом
+# Запускаем сервер (учитываем переменную $PORT)
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
