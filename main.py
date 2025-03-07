@@ -1,8 +1,5 @@
-import os
-# import sqlite3
+
 from fastapi import FastAPI
-from pydantic import BaseModel
-from datetime import datetime
 
 app = FastAPI()
 
@@ -29,6 +26,11 @@ app = FastAPI()
 # # Вызываем создание таблицы при старте
 # create_tables()
 
+# Для проверки, что сервер работает
+@app.get("/")
+async def root():
+    return {"status": "API server is running"}
+
 @app.get("/hello_world")
 def hello_world():
     return {"message": "Hello world! version !Docker"}
@@ -37,9 +39,9 @@ def hello_world():
 def sum_numbers(a: int, b: int):
     return {"a": a, "b": b, "sum": a + b}
 
-class Message(BaseModel):
-    user_id: int
-    message: str
+# class Message(BaseModel):
+#     user_id: int
+#     message: str
 
 # @app.post("/add_message")
 # def add_message(msg: Message):
@@ -73,7 +75,11 @@ class Message(BaseModel):
 #     messages = [{"id": row[0], "time_stamp": row[1], "user_id": row[2], "message": row[3]} for row in rows]
 #     return {"user_id": user_id, "messages": messages}
 
+
+
+import os
+PORT = int(os.getenv("PORT", 8000))  # Берём порт из переменной окружения, если нет — 8000
+
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))  # Railway задаёт PORT
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
