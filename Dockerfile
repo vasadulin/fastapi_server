@@ -4,8 +4,6 @@ FROM python:3.11-alpine
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev python3-dev libpq-dev
-
 # Копируем файлы проекта
 COPY . .
 
