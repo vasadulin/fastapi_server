@@ -1,3 +1,4 @@
 fastapi
 uvicorn
-
+sqlalchemy
+asyncpg  # Для асинхронного доступа через SQLAlchemy
