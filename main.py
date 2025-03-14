@@ -1,30 +1,31 @@
 
-from fastapi import FastAPI
+# main.py
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import engine, get_db, Base
+from models import Message
+from pydantic import BaseModel
+from typing import List
 
 app = FastAPI()
 
-# # 🔹 Функция для получения соединения с БД
-# def get_db_connection():
-#     conn = sqlite3.connect("mybase.db", check_same_thread=False)
-#     return conn
+# Создаем таблицы в базе данных при запуске приложения
+Base.metadata.create_all(bind=engine)
 
-# # 🔹 Создаём таблицу (вызываем 1 раз при старте)
-# def create_tables():
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#     cursor.execute("""
-#         CREATE TABLE IF NOT EXISTS messages (
-#             id INTEGER PRIMARY KEY AUTOINCREMENT,
-#             time_stamp TEXT,
-#             user_id INTEGER,
-#             message TEXT
-#         )
-#     """)
-#     conn.commit()
-#     conn.close()
+# Pydantic модели для валидации запросов и ответов
+class MessageCreate(BaseModel):
+    user_id: int
+    message: str
 
-# # Вызываем создание таблицы при старте
-# create_tables()
+class MessageResponse(BaseModel):
+    id: int
+    time_stamp: str
+    user_id: int
+    message: str
+
+class UserMessagesResponse(BaseModel):
+    user_id: int
+    messages: List[MessageResponse]
 
 # Для проверки, что сервер работает
 @app.get("/")
@@ -38,6 +39,31 @@ def hello_world():
 @app.get("/sum")
 def sum_numbers(a: int, b: int):
     return {"a": a, "b": b, "sum": a + b}
+
+@app.post("/sum")
+async def post_sum(a: int = 1, b: int = 3):
+    return {"a": a, "b": b, "sum": a + b}
+
+# Новые эндпоинты для работы с базой данных
+@app.post("/add_message", response_model=MessageResponse)
+async def add_message(message: MessageCreate, db: Session = Depends(get_db)):
+    db_message = Message(user_id=message.user_id, message=message.message)
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+@app.post("/get_message", response_model=MessageResponse)
+async def get_message(id: int, db: Session = Depends(get_db)):
+    db_message = db.query(Message).filter(Message.id == id).first()
+    if db_message is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return db_message
+
+@app.post("/get_user_messages", response_model=UserMessagesResponse)
+async def get_user_messages(user_id: int, db: Session = Depends(get_db)):
+    messages = db.query(Message).filter(Message.user_id == user_id).all()
+    return {"user_id": user_id, "messages": messages}
 
 # class Message(BaseModel):
 #     user_id: int

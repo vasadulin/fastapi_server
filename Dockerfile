@@ -1,28 +1,23 @@
-# Используем еще более легкий образ Python на основе Alpine
+# Используем легкий образ Python на основе Alpine
 FROM python:3.11-alpine
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем файлы проекта
-COPY . .
+# Копируем requirements.txt для кэширования зависимостей
+COPY requirements.txt .
 
-# Копируем только файлы, необходимые для установки зависимостей
-# COPY requirements.txt /app/
+# Устанавливаем зависимости для PostgreSQL и Python
+RUN apk add --no-cache postgresql-libs && \
+    apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apk del .build-deps
 
-# Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+# Копируем только необходимые файлы проекта
+COPY main.py database.py models.py ./
 
-# RUN pip install --no-cache-dir -r requirements.txt && \
-#    rm -rf /root/.cache
+# Устанавливаем переменную окружения для логов в реальном времени
+ENV PYTHONUNBUFFERED=1
 
-# Копируем оставшиеся файлы проекта
-# COPY . /app
-
-# Открываем порт 8000
-EXPOSE 8000
-
-# Запускаем сервер
-# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+# Запускаем приложение через Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
