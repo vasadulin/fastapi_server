@@ -24,4 +24,5 @@ ENV PYTHONUNBUFFERED=1
 # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
 
 # For Railway
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT", "--workers", "1"]
+# Добавляем проверку порта через скрипт
+CMD ["sh", "-c", "PORT=${PORT:-8000}; if ! [[ \"$PORT\" =~ ^[0-9]+$ ]]; then PORT=8000; fi; uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1"]
